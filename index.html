@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Short-Video Recommender — Built From Scratch</title>
+<meta name="description" content="An original from-scratch build of a recommendation system for an endless short-video feed: learn from split-second watch signals to decide what plays next." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --accent:#e11d48; --accent-soft:#fdeaef; --ink:#250b13; --muted:#6e4751;
+    --line:#f3d4dc; --bg:#fdf7f8; --card:#ffffff;
+    --serif:'Fraunces',Georgia,serif; --sans:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.65;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px;margin:0 auto;padding:0 28px}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:var(--mono);font-size:.86em;background:var(--accent-soft);padding:.1em .4em;border-radius:4px;color:#be123c}
+  h1,h2,h3{font-family:var(--serif);font-weight:500;line-height:1.15;letter-spacing:-.01em}
+  header.hero{padding:88px 0 56px;border-bottom:1px solid var(--line)}
+  .eyebrow{font-family:var(--mono);font-size:.74rem;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin:0 0 22px}
+  h1{font-size:clamp(2.6rem,6vw,4.1rem);margin:0 0 18px}
+  .lede{font-size:1.22rem;color:var(--muted);max-width:62ch;margin:0 0 28px}
+  .meta{display:flex;flex-wrap:wrap;gap:10px;font-size:.82rem}
+  .chip{font-family:var(--mono);font-size:.72rem;letter-spacing:.04em;border:1px solid var(--line);border-radius:999px;padding:5px 12px;color:var(--muted);background:var(--card)}
+  section{padding:54px 0;border-bottom:1px solid var(--line)}
+  .kicker{font-family:var(--mono);font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin:0 0 14px}
+  h2{font-size:clamp(1.7rem,3.4vw,2.3rem);margin:0 0 20px}
+  h3{font-size:1.2rem;margin:0 0 6px}
+  p{margin:0 0 18px;max-width:68ch}
+  .muted{color:var(--muted)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:8px}
+  .tool{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .tool .t{font-family:var(--mono);font-size:.78rem;color:var(--accent);letter-spacing:.04em;margin-bottom:8px}
+  .tool h3{font-size:1.05rem;font-family:var(--sans);font-weight:600;margin-bottom:6px}
+  .tool p{font-size:.92rem;color:var(--muted);margin:0}
+  ol.flow{counter-reset:s;list-style:none;padding:0;margin:24px 0 0}
+  ol.flow li{position:relative;padding:18px 0 18px 56px;border-top:1px solid var(--line)}
+  ol.flow li:before{counter-increment:s;content:counter(s,decimal-leading-zero);position:absolute;left:0;top:18px;font-family:var(--mono);font-size:.8rem;color:var(--accent);border:1px solid var(--line);border-radius:8px;width:38px;height:38px;display:grid;place-items:center;background:var(--card)}
+  ol.flow li h3{font-family:var(--sans);font-size:1.02rem;font-weight:600;margin:0 0 4px}
+  ol.flow li p{margin:0;font-size:.93rem;color:var(--muted)}
+  .callout{background:var(--accent-soft);border:1px solid #f1c9d3;border-radius:14px;padding:24px 26px;margin-top:8px}
+  .callout p:last-child{margin:0}
+  ul.learn{list-style:none;padding:0;margin:8px 0 0}
+  ul.learn li{padding:14px 0 14px 30px;border-top:1px solid var(--line);position:relative;color:var(--muted);max-width:68ch}
+  ul.learn li:before{content:"→";position:absolute;left:0;color:var(--accent);font-family:var(--mono)}
+  ul.learn li b{color:var(--ink);font-weight:600}
+  .price{display:flex;align-items:baseline;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 26px;margin-top:8px}
+  .price .n{font-family:var(--serif);font-size:2.6rem;color:var(--accent);line-height:1}
+  .price .l{color:var(--muted);font-size:.95rem}
+  footer{padding:48px 0 80px}
+  .credit{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px}
+  .credit .k{font-family:var(--mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+  footer .fine{font-size:.8rem;color:var(--muted);margin-top:22px;text-align:center}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">From-Scratch Build · Recommendation Systems</p>
+    <h1>Short-Video Recommender</h1>
+    <p class="lede">The endless feed is the most aggressive recommender ever built: one video at a time, judged by how long you lingered before the swipe. This build is that engine — learning from split-second watch signals to decide what plays next. I rebuilt it from scratch because it's recommendation under the hardest constraint: instant, implicit, and relentless.</p>
+    <div class="meta">
+      <span class="chip">Python</span><span class="chip">Implicit feedback</span><span class="chip">Watch-time signal</span>
+      <span class="chip">Candidate + ranking</span><span class="chip">Sequential</span><span class="chip">RecSys</span>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <p class="kicker">What it is</p>
+    <h2>One feed, judged in seconds</h2>
+    <p>Unlike a store of products you browse, a short-video feed shows you exactly one thing and watches what you do. There are no stars and no reviews — just behaviour: did you watch to the end, replay it, like it, or flick it away in half a second? Those micro-signals are the entire training set, and the system has to turn them into the next pick, immediately.</p>
+    <p>The architecture mirrors how the real ones work: a fast <i>candidate</i> stage narrows millions of videos to a few hundred plausible ones, then a heavier <i>ranking</i> stage orders those by predicted watch-time. Splitting the problem this way is the only way to be both broad and fast.</p>
+    <div class="price">
+      <div class="n">2-stage</div>
+      <div class="l">candidate generation then ranking — the standard architecture that makes recommending from millions feel instant.</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="kicker">The stack</p>
+    <h2>From a swipe to the next video</h2>
+    <p class="muted">Behaviour in, an ordered shortlist out — fast.</p>
+    <div class="grid">
+      <div class="tool"><div class="t">signal</div><h3>Watch-time feedback</h3><p>Completion, replays, likes and skips — implicit signals that stand in for "did you enjoy this?"</p></div>
+      <div class="tool"><div class="t">stage 1</div><h3>Candidate generation</h3><p>Cheaply shortlist a few hundred relevant videos from the whole catalogue.</p></div>
+      <div class="tool"><div class="t">stage 2</div><h3>Ranking model</h3><p>Score each candidate by predicted engagement, using richer features.</p></div>
+      <div class="tool"><div class="t">memory</div><h3>Session sequence</h3><p>Account for what was just watched — interest drifts within a single sitting.</p></div>
+      <div class="tool"><div class="t">balance</div><h3>Explore / exploit</h3><p>Mostly give them what they'll love, sometimes probe new interests so the feed doesn't collapse.</p></div>
+      <div class="tool"><div class="t">evaluate</div><h3>Engagement metrics</h3><p>Predicted vs realised watch-time on held-out sessions — the score that matters.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="kicker">Architecture</p>
+    <h2>How the next video is chosen</h2>
+    <p>Every swipe triggers the same two-stage decision:</p>
+    <ol class="flow">
+      <li><h3>Observe</h3><p>Capture the watch signals from the video just shown.</p></li>
+      <li><h3>Generate</h3><p>Shortlist candidate videos that match the evolving interest profile.</p></li>
+      <li><h3>Rank</h3><p>Score the shortlist by predicted watch-time and engagement.</p></li>
+      <li><h3>Mix</h3><p>Blend in a little exploration so new interests can surface.</p></li>
+      <li><h3>Serve &amp; learn</h3><p>Play the top pick and fold the next reaction straight back in.</p></li>
+    </ol>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <p class="kicker">Reflection</p>
+    <h2>What rebuilding it taught me</h2>
+    <ul class="learn">
+      <li><b>Behaviour is the only label.</b> With no ratings, watch-time and skips <i>are</i> the ground truth — reading them right is the whole job.</li>
+      <li><b>Two stages or bust.</b> You can't deeply rank millions in real time; candidate-then-rank is what makes instant recommendation possible.</li>
+      <li><b>Sessions have momentum.</b> What someone wants shifts minute to minute, so the model has to respect sequence, not just identity.</li>
+      <li><b>Exploration prevents collapse.</b> Pure exploitation traps a user in a shrinking loop; deliberate exploration keeps the feed alive.</li>
+      <li><b>Optimising watch-time has ethics.</b> The metric that works is also the one that can trap attention — worth building with eyes open.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="credit">
+      <div class="k">About this build</div>
+      <p style="margin:0">An original, from-scratch build by <b>Andrea</b> — written to learn modern feed recommendation: implicit watch-time signals, two-stage candidate-and-ranking architecture, sequential sessions and explore/exploit. Plain HTML/CSS, deployed on GitHub Pages.</p>
+    </div>
+    <p class="fine">Built from scratch by Andrea · one of an ongoing series of learning builds.</p>
+  </div>
+</footer>
+</body>
+</html>
