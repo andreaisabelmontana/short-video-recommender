@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Short-Video Recommender — Built From Scratch</title>
-<meta name="description" content="An original from-scratch build of a recommendation system for an endless short-video feed: learn from split-second watch signals to decide what plays next." />
+<meta name="description" content="An original from-scratch build: an implicit-feedback recommender for an endless short-video feed. Confidence-weighted matrix factorization learns from watch signals to decide what plays next." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -64,10 +64,10 @@
   <div class="wrap">
     <p class="eyebrow">From-Scratch Build · Recommendation Systems</p>
     <h1>Short-Video Recommender</h1>
-    <p class="lede">The endless feed is the most aggressive recommender ever built: one video at a time, judged by how long you lingered before the swipe. This build is that engine — learning from split-second watch signals to decide what plays next. I rebuilt it from scratch because it's recommendation under the hardest constraint: instant, implicit, and relentless.</p>
+    <p class="lede">The endless feed is judged by one thing: how long you lingered before the swipe. This build turns those split-second watch signals into the next pick — an implicit-feedback recommender with a confidence-weighted matrix factorization I wrote from scratch in NumPy/SciPy. No stars, no reviews: behaviour is the only label.</p>
     <div class="meta">
-      <span class="chip">Python</span><span class="chip">Implicit feedback</span><span class="chip">Watch-time signal</span>
-      <span class="chip">Candidate + ranking</span><span class="chip">Sequential</span><span class="chip">RecSys</span>
+      <span class="chip">Python</span><span class="chip">Implicit feedback</span><span class="chip">watch_ratio signal</span>
+      <span class="chip">Matrix factorization</span><span class="chip">Confidence-weighted ALS</span><span class="chip">From scratch</span>
     </div>
   </div>
 </header>
@@ -76,55 +76,69 @@
   <div class="wrap">
     <p class="kicker">What it is</p>
     <h2>One feed, judged in seconds</h2>
-    <p>Unlike a store of products you browse, a short-video feed shows you exactly one thing and watches what you do. There are no stars and no reviews — just behaviour: did you watch to the end, replay it, like it, or flick it away in half a second? Those micro-signals are the entire training set, and the system has to turn them into the next pick, immediately.</p>
-    <p>The architecture mirrors how the real ones work: a fast <i>candidate</i> stage narrows millions of videos to a few hundred plausible ones, then a heavier <i>ranking</i> stage orders those by predicted watch-time. Splitting the problem this way is the only way to be both broad and fast.</p>
+    <p>Unlike a store of products you browse, a short-video feed shows you exactly one thing and watches what you do. There are no stars and no reviews — just behaviour: did you watch to the end, or flick it away in half a second? That single number, <code>watch_ratio = watch_time / duration</code>, is the entire training signal.</p>
+    <p>The model turns it into <i>implicit feedback</i> in the style of Hu, Koren &amp; Volinsky: a video you watched at all is a positive with <i>preference</i> 1, but how long you watched sets a <i>confidence</i> <code>1 + α·watch_ratio</code> — a completed watch counts far more than a half-second glance. A confidence-weighted matrix factorization, trained by alternating least squares, learns user and video factors from that, and <code>next_videos(user, k)</code> ranks unseen videos by predicted preference.</p>
     <div class="price">
-      <div class="n">2-stage</div>
-      <div class="l">candidate generation then ranking — the standard architecture that makes recommending from millions feel instant.</div>
+      <div class="n">2.72×</div>
+      <div class="l">held-out Recall@10 of the learned model over a popularity baseline, on planted-structure synthetic data — a real number from <code>demo.py</code>.</div>
     </div>
   </div>
 </section>
 
 <section>
   <div class="wrap">
-    <p class="kicker">The stack</p>
-    <h2>From a swipe to the next video</h2>
-    <p class="muted">Behaviour in, an ordered shortlist out — fast.</p>
+    <p class="kicker">The pipeline</p>
+    <h2>From a watch_ratio to the next video</h2>
+    <p class="muted">Behaviour in, an ordered list of unseen videos out.</p>
     <div class="grid">
-      <div class="tool"><div class="t">signal</div><h3>Watch-time feedback</h3><p>Completion, replays, likes and skips — implicit signals that stand in for "did you enjoy this?"</p></div>
-      <div class="tool"><div class="t">stage 1</div><h3>Candidate generation</h3><p>Cheaply shortlist a few hundred relevant videos from the whole catalogue.</p></div>
-      <div class="tool"><div class="t">stage 2</div><h3>Ranking model</h3><p>Score each candidate by predicted engagement, using richer features.</p></div>
-      <div class="tool"><div class="t">memory</div><h3>Session sequence</h3><p>Account for what was just watched — interest drifts within a single sitting.</p></div>
-      <div class="tool"><div class="t">balance</div><h3>Explore / exploit</h3><p>Mostly give them what they'll love, sometimes probe new interests so the feed doesn't collapse.</p></div>
-      <div class="tool"><div class="t">evaluate</div><h3>Engagement metrics</h3><p>Predicted vs realised watch-time on held-out sessions — the score that matters.</p></div>
+      <div class="tool"><div class="t">signal</div><h3>watch_ratio</h3><p>watch_time ÷ duration, in [0, 1]. The only label a short-video feed gives you.</p></div>
+      <div class="tool"><div class="t">model</div><h3>Implicit feedback</h3><p>preference = 1 on any watch; confidence = 1 + α·watch_ratio weights it by how long.</p></div>
+      <div class="tool"><div class="t">train</div><h3>Confidence-weighted ALS</h3><p>Hand-rolled alternating least squares learns user + video factors from the weighted signal.</p></div>
+      <div class="tool"><div class="t">rank</div><h3>next_videos(user, k)</h3><p>Score every unseen video by x·y, return the top-k. The actual recommendation.</p></div>
+      <div class="tool"><div class="t">online</div><h3>Single-watch update</h3><p>A fresh completed watch re-solves that user's factor row and nudges the next pick.</p></div>
+      <div class="tool"><div class="t">evaluate</div><h3>Recall@K / NDCG@K</h3><p>Held-out ranking quality against a popularity baseline — real numbers, not claims.</p></div>
     </div>
   </div>
 </section>
 
 <section>
   <div class="wrap">
-    <p class="kicker">Architecture</p>
+    <p class="kicker">How it works</p>
     <h2>How the next video is chosen</h2>
-    <p>Every swipe triggers the same two-stage decision:</p>
+    <p>Each watch feeds the same loop:</p>
     <ol class="flow">
-      <li><h3>Observe</h3><p>Capture the watch signals from the video just shown.</p></li>
-      <li><h3>Generate</h3><p>Shortlist candidate videos that match the evolving interest profile.</p></li>
-      <li><h3>Rank</h3><p>Score the shortlist by predicted watch-time and engagement.</p></li>
-      <li><h3>Mix</h3><p>Blend in a little exploration so new interests can surface.</p></li>
-      <li><h3>Serve &amp; learn</h3><p>Play the top pick and fold the next reaction straight back in.</p></li>
+      <li><h3>Observe</h3><p>Record the watch_ratio for the video just shown.</p></li>
+      <li><h3>Weight</h3><p>Turn it into preference 1 with confidence 1 + α·watch_ratio — long watches count more.</p></li>
+      <li><h3>Factor</h3><p>Confidence-weighted ALS learns a latent vector for the user and for every video.</p></li>
+      <li><h3>Rank</h3><p>Score all unseen videos by the dot product of those vectors; take the top-k.</p></li>
+      <li><h3>Update</h3><p>A fresh completed watch re-solves the user's factor row, so the next pick reflects it.</p></li>
     </ol>
   </div>
 </section>
 
 <section>
   <div class="wrap">
+    <p class="kicker">Real results</p>
+    <h2>It beats popularity — measured</h2>
+    <p>On synthetic data with planted interests (300 users, 400 videos, 6 topics, 18,000 interactions; a held-out video counts as relevant if it was watched ≥ 60%), the learned model is run against a non-personalised popularity baseline. These are the numbers <code>demo.py</code> prints:</p>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
+      <div class="tool"><div class="t">implicit-MF</div><h3>Recall@10 · 0.141</h3><p>NDCG@10 · 0.093 — the confidence-weighted matrix factorization.</p></div>
+      <div class="tool"><div class="t">popularity baseline</div><h3>Recall@10 · 0.052</h3><p>NDCG@10 · 0.026 — same top-k for everyone, no personalisation.</p></div>
+      <div class="tool"><div class="t">lift</div><h3>2.72× Recall@10</h3><p>Over 230 held-out users. The watch signal carries real, recoverable preference.</p></div>
+    </div>
+    <p class="muted" style="margin-top:18px">The data is synthetic and I say so plainly — but it is generated so watch behaviour actually reflects interest, which is what makes the structure recoverable in the first place.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
     <p class="kicker">Reflection</p>
-    <h2>What rebuilding it taught me</h2>
+    <h2>What building it taught me</h2>
     <ul class="learn">
-      <li><b>Behaviour is the only label.</b> With no ratings, watch-time and skips <i>are</i> the ground truth — reading them right is the whole job.</li>
-      <li><b>Two stages or bust.</b> You can't deeply rank millions in real time; candidate-then-rank is what makes instant recommendation possible.</li>
-      <li><b>Sessions have momentum.</b> What someone wants shifts minute to minute, so the model has to respect sequence, not just identity.</li>
-      <li><b>Exploration prevents collapse.</b> Pure exploitation traps a user in a shrinking loop; deliberate exploration keeps the feed alive.</li>
+      <li><b>Behaviour is the only label.</b> With no ratings, watch_ratio <i>is</i> the ground truth — reading it right is the whole job.</li>
+      <li><b>Preference vs confidence.</b> Splitting "did you watch?" from "how much?" is the key idea that makes implicit feedback work; it's what beats popularity here.</li>
+      <li><b>Hand-rolling ALS clarifies it.</b> Writing the alternating least-squares update myself — precomputing YᵀY, solving per user — made the maths concrete instead of a library call.</li>
+      <li><b>Evaluation has to be honest.</b> Recall@K against a popularity baseline is the test that tells you the model learned something personal, not just "show everyone the hits".</li>
       <li><b>Optimising watch-time has ethics.</b> The metric that works is also the one that can trap attention — worth building with eyes open.</li>
     </ul>
   </div>
@@ -134,7 +148,7 @@
   <div class="wrap">
     <div class="credit">
       <div class="k">About this build</div>
-      <p style="margin:0">An original, from-scratch build by <b>Andrea</b> — written to learn modern feed recommendation: implicit watch-time signals, two-stage candidate-and-ranking architecture, sequential sessions and explore/exploit. Plain HTML/CSS, deployed on GitHub Pages.</p>
+      <p style="margin:0">An original, from-scratch build by <b>Andrea</b> — written to learn implicit-feedback recommendation: watch_ratio signals, preference-and-confidence weighting, and a matrix factorization trained by confidence-weighted ALS hand-rolled in NumPy/SciPy. The Python lives in the repo; this page is plain HTML/CSS on GitHub Pages.</p>
     </div>
     <p class="fine">Built from scratch by Andrea · one of an ongoing series of learning builds.</p>
   </div>
